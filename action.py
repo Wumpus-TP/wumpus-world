@@ -157,7 +157,7 @@ class Grid:
         return self.f() < other.f()  # 노드간 비교 연산을 f(n) 값에 기반하여 정의
 
 # 원하는 위치의 격자에 접근하기 위한 함수
-def find_path(self, start, heuristic_func, get_neighbors_func, isgrab):
+def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
     goal = (4, 1) # 다시 돌아가야 할 노드
     
     open_list = []
@@ -166,28 +166,29 @@ def find_path(self, start, heuristic_func, get_neighbors_func, isgrab):
     danger_heur = {} # 각 노드의 위험확률을 저장하기 위한 딕셔너리
 
     # 시작 노드 초기화
-    start_node = Grid(start, g=0, h=heuristic_func(self, start))
+    start_node = Grid(start, g=0, h=sum_danger(self, start))
     heapq.heappush(open_list, start_node)
     path_costs[start] = 0
 
     while open_list:
         current_node = heapq.heappop(open_list)
 
-        if current_node.state in closed_list:
-            continue
-
-        closed_list.add(current_node.state)
-
         # 금을 획득하면,
         # 다시 원래 자리로 돌아가야하므로 시작 지점까지 가는 루트 탐색
         if isgrab == True and current_node.state == goal:
             return end_to_start(self, current_node)
 
+        if current_node.state in closed_list:
+            continue
+
+        closed_list.add(current_node.state)
+
+        
         neighbors = get_neighbors_func(current_node.state)
 
         for neighbor_state in neighbors:
             neighbor_g = current_node.g + 1  # 비용은 항상 1로 가정
-            neighbor_h = heuristic_func(self, neighbor_state)
+            neighbor_h = sum_danger(self, neighbor_state)
             neighbor_node = Grid(neighbor_state, parent=current_node, g=neighbor_g, h=neighbor_h)
 
             if neighbor_state not in path_costs or neighbor_g < path_costs[neighbor_state]:
@@ -198,7 +199,7 @@ def find_path(self, start, heuristic_func, get_neighbors_func, isgrab):
     return [path_costs,sorted(danger_heur.items(), key=lambda x:x[1])]
 
 # 휴리스틱 함수 = wumpus가 있을 확률+ pitch가 있을 확률
-def heuristic_func(self, state):
+def sum_danger(self, state):
     heuristic = self.danger_prob[state[0]][state[1]][0] + self.danger_prob[state[0]][state[1]][1]
     return heuristic
 
@@ -236,8 +237,8 @@ def reasoning(self):
     
     if percept.sense_glitter(self):
         self.world[before_x][before_y] = 0
-        path = find_path(self, (before_x, before_y), heuristic_func, get_neighbors_func, True)
-        print(f"let's go: {path}")
+        path = find_path(self, (before_x, before_y), sum_danger, get_neighbors_func, True)
+        
         
         return [grab(self), path]
     else:
@@ -282,17 +283,17 @@ def reasoning(self):
                 
             # agent가 이동할 최적의 이동 경로
             elif [after_x, after_y] in self.visited:
-                result = find_path(self, (before_x, before_y), heuristic_func, get_neighbors_func, False)
+                result = find_path(self, (before_x, before_y), sum_danger, get_neighbors_func, False)
                 path_costs = result[0]
                 danger_heur = result[1]
                 for pos, prob in danger_heur:
-                    print(f"위치: [{pos[0]}, {pos[1]}], 확률: {prob}, 거리: {path_costs[pos]}")
+                    #print(f"위치: [{pos[0]}, {pos[1]}], 확률: {prob}, 거리: {path_costs[pos]}")
                     if path_costs[pos] != 1:
                         continue
                     elif (path_costs[pos] == 1 and prob < 100 
                         and self.visited.count([pos[0], pos[1]]) < 2):
                         
-                        print(f"count: [{pos[0]}, {pos[1]}] = {self.visited.count([pos[0], pos[1]])}")
+                        #print(f"count: [{pos[0]}, {pos[1]}] = {self.visited.count([pos[0], pos[1]])}")
                         if [before_x+1, before_y] == [pos[0], pos[1]]:
                             self.agent['xy'] = [pos[0], pos[1]]
                             self.update_visited(pos[0], pos[1])

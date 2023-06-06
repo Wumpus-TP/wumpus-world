@@ -7,21 +7,27 @@ random.seed(1031) # 1005, 1020, 1031
 
 def load_img():
     #아이템 이미지 불러오기
-    wumpus = pygame.image.load('./Wumpus World_images/wumpus.png')
+    wumpus = pygame.image.load('./wumpus-world/Wumpus World_images/wumpus.png')
     wumpus = pygame.transform.scale(wumpus,(100,100))
-    pitch = pygame.image.load('./Wumpus World_images/pitch.png')
+    pitch = pygame.image.load('./wumpus-world/Wumpus World_images/pitch.png')
     pitch = pygame.transform.scale(pitch,(100,100))
-    gold = pygame.image.load('./Wumpus World_images/gold.png')
+    gold = pygame.image.load('./wumpus-world/Wumpus World_images/gold.png')
     gold = pygame.transform.scale(gold,(100,100))
     #캐릭터 불러오기
-    character = pygame.image.load('./Wumpus World_images/Izreal.png')
+    character = pygame.image.load('./wumpus-world/Wumpus World_images/Izreal.png')
     character = pygame.transform.scale(character,(90,90))
-    return wumpus, pitch, gold, character
+    #배경 이미지 불러오기
+    background = pygame.image.load('./wumpus-world/Wumpus World_images/grid.png')
+    background = pygame.transform.scale(background,(500,500))
+
+    return [wumpus, pitch, gold, character, background]
 
 def draw_items(world):
     wumpus = load_img()[0]
     pitch = load_img()[1] 
     gold = load_img()[2]
+    grid = load_img()[4]
+    screen.blit(grid, (100, 50))
     #아이템 위치지정
     for x,row in enumerate(world.world):
         for y,i in enumerate(row):
@@ -41,22 +47,25 @@ def rotate(character_info, dir, state, world):
     west_character = character_info[5]
 
     while dir != state:
-        character = pygame.transform.rotate(character, 90)
         if dir == "East":
             dir = "North"
+            character = pygame.transform.rotate(east_character, 90)
         elif dir == "West":
             dir = "South"
+            character = pygame.transform.rotate(west_character, 90)
         elif dir == "North":
             dir = "West"
             character = west_character
         elif dir == "South":
             dir = "East"
             character = east_character
+        world.agent['dir'] = dir
+        
         screen.fill((255, 255, 255))
         screen.blit(character, (character_x_pos, character_y_pos)) #배경에 캐릭터 그려주기
         draw_items(world)
         pygame.display.update()
-        sleep(1)
+        sleep(0.5)
     return character
 
 def move_pos(character_info, dir):
@@ -94,6 +103,7 @@ def gui():
     #FPS 설정
     clock = pygame.time.Clock()
     
+    
     # 이미지 불러오기
     character = load_img()[3]
     character_size = character.get_rect().size #캐릭터 이미지 사이즈 구하기
@@ -117,6 +127,12 @@ def gui():
     #이벤트 루프
     running = True #게임 진행 여부에 대한 변수 True : 게임 진행 중
     world.update_visited(world.agent['xy'][0], world.agent['xy'][1])
+
+    # 배경 불러오기
+    background = load_img()[4]
+    screen.blit(background,(100,50)) #배경에 이미지 그려주고 위치 지정
+    draw_items(world)
+
     while running:
         
         for event in pygame.event.get(): #이벤트의 발생 여부에 따른 반복문
@@ -133,7 +149,7 @@ def gui():
                     print(row)
 
                 pygame.display.update()
-                sleep(1)
+                sleep(0.5)
                 print("현재 위치는: ")
                 print(world.agent['xy'])
                 runGame = reasoning(world)
@@ -176,38 +192,41 @@ def gui():
                         if route[0] == world.agent['xy'][0]:
                             if route[1] == world.agent['xy'][1]+1:
                                 character = rotate(character_info, world.agent['dir'], "East",world)
-                                world.agent['dir'] = "East"
+                                
                             elif route[1] == world.agent['xy'][1]-1:
                                 character = rotate(character_info,world.agent['dir'], "West", world)
-                                world.agent['dir'] = "West"
+                                
                         elif route[1] == world.agent['xy'][1]:
                             if route[0] == world.agent['xy'][0]+1:
                                 character = rotate(character_info, world.agent['dir'], "South", world)
-                                world.agent['dir'] = "South"
+                               
                             elif route[0] == world.agent['xy'][0]-1:
                                 character = rotate(character_info, world.agent['dir'], "North", world)
-                                world.agent['dir'] = "North"
-                        
                         character_info[1], character_info[2] = move_pos(character_info, world.agent['dir'])
-                        print(result[0], result[1])
+                        if world.agent['dir'] == "East":
+                            character = east_character
+                        elif world.agent['dir'] == "West":
+                            character = west_character
                         print(route)
-                        print(world.agent['dir'], world.agent['dir'])
                         world.agent['xy'] = route
                         screen.fill(color)
                         screen.blit(character, (character_info[1], character_info[2])) #배경에 캐릭터 그려주기
                         draw_items(world)
                         pygame.display.update()
-                        sleep(1)
+                        sleep(0.5)
 
                         # Climb
-                        if world.agent['xy'] == [4, 1]:
+                        if route == (4, 1):
                             print("FINISH!!!")
                             character = east_character
                             screen.fill((255, 255, 255))
-                            screen.blit(character, (world.agent['xy'][0], world.agent['xy'][1])) #배경에 캐릭터 그려주기
+                            screen.blit(character, (character_info[1], character_info[2])) #배경에 캐릭터 그려주기
                             draw_items(world)
                             pygame.display.update()
+                            sleep(10)
                             running = False
+
+                        
                       
                 print("\n")    
 
@@ -228,40 +247,15 @@ def gui():
                 # 이미지 리로드
                 screen.fill(color)
 
-                # 이미지 출력
-                # for x in range(1, 5):
-                #     for y in range(1, 5):
-                #         if world.visited[x][y] == 1 and world.world[x][y] == "W":
-                #             screen.blit(wumpus,(115 + (y-1)*125,70 + (x-1)*125))
-                #         if  world.visited[x][y] == 1 and world.world[x][y] == "P":
-                #             screen.blit(pitch,(115 + (y-1)*125,70 + (x-1)*125))
-                #         if  world.visited[x][y] == 1 and world.world[x][y] == "G":
-                #             screen.blit(gold,(115 + (y-1)*125,70 + (x-1)*125))
-                
+                screen.blit(background,(100,50)) #배경에 이미지 그려주고 위치 지정
                 draw_items(world)
                 
-                #그리드 생성
-                for x in range(0, 6):
-                    for y in range(0, 6):
-                        
-                        if  [x, y] in world.visited and percept.sense_bump(world, x, y): 
-                            if ((x == 0 and y == 0) or (x == 0 and y == 5)):
-                                continue
-                            if y == 0:
-                                pygame.draw.rect(screen, (0,0,0), (100, 50+125*(x-1), 10, 125))
-                            elif y == 5:
-                                pygame.draw.rect(screen, (0,0,0), (600, 50+125*(x-1), 10, 125))
-                            if x == 0:
-                                if not ((y == 5) or (y == 0)):
-                                    pygame.draw.rect(screen, (0, 0, 0), (100+125*(y-1), 50, 125, 10))
-                            elif x == 5:
-                                if not ((y == 5) or (y == 0)):
-                                    pygame.draw.rect(screen, (0, 0, 0), (100+125*(y-1), 550, 125, 10))
                                         
                 screen.blit(character, (character_x_pos, character_y_pos)) #배경에 캐릭터 그려주기
                 pygame.display.update()
                 
                 
+            
                 
         
     #pygame 종료

@@ -104,7 +104,7 @@ class init_world:
             
             if self.danger_prob[nx][ny][env] != 0:
                 c.append([nx, ny])
-        print(c)            
+        #print(c)            
         if len(c) == 1: # 오직 하나만 0이 아닐 경우,
             xy = c.pop()
             self.danger_prob[xy[0]][xy[1]][env] = 100
