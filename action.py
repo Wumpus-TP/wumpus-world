@@ -5,6 +5,7 @@ import heapq
 # if agent die, reset agent's state
 def die(self):
     self.agent = {'xy': [4, 1], 'dir': 'East', 'arrow': 2,'isgrab':False}
+    self.update_visited(4, 1)
     return "Die"
 
 
@@ -144,17 +145,15 @@ def climb(self):
 
 # 현재 위치에서 원하는 위치의 격자까지의 비용 계산 클래스
 class Grid:
-    def __init__(self, state, parent=None, g=0, h=0):
+    def __init__(self, state, parent=None, g=0, h=0, f=0):
         self.state = state
         self.parent = parent
         self.g = g  # g(n): 비용
         self.h = h  # h(n): 휴리스틱 함수 값
-
-    def f(self):
-        return self.g + self.h  # f(n): 총 비용
+        self.f = f
 
     def __lt__(self, other):
-        return self.f() < other.f()  # 노드간 비교 연산을 f(n) 값에 기반하여 정의
+        return self.state == other.state
 
 # 원하는 위치의 격자에 접근하기 위한 함수
 def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
@@ -166,7 +165,7 @@ def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
     danger_heur = {} # 각 노드의 위험확률을 저장하기 위한 딕셔너리
 
     # 시작 노드 초기화
-    start_node = Grid(start, g=0, h=sum_danger(self, start))
+    start_node = Grid(start, g=0, h=0)
     heapq.heappush(open_list, start_node)
     path_costs[start] = 0
 
@@ -183,17 +182,21 @@ def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
 
         closed_list.add(current_node.state)
 
-        
-        neighbors = get_neighbors_func(current_node.state)
+        neighbors = []
+        if isgrab == True:
+            if [current_node.state[0], current_node.state[1]] in self.visited:
+                neighbors = get_neighbors_func(current_node.state)
+        else:
+            neighbors = get_neighbors_func(current_node.state)
 
         for neighbor_state in neighbors:
             neighbor_g = current_node.g + 1  # 비용은 항상 1로 가정
-            neighbor_h = sum_danger(self, neighbor_state)
-            neighbor_node = Grid(neighbor_state, parent=current_node, g=neighbor_g, h=neighbor_h)
+            neighbor_h = ((current_node.state[0] - neighbor_state[0]) ** 2) + ((current_node.state[1] - neighbor_state[1]) ** 2)
+            neighbor_node = Grid(neighbor_state, parent=current_node, g=neighbor_g, h=neighbor_h, f=neighbor_g + neighbor_h)
 
             if neighbor_state not in path_costs or neighbor_g < path_costs[neighbor_state]:
                 path_costs[neighbor_state] = neighbor_g
-                danger_heur[neighbor_state] = neighbor_h
+                danger_heur[neighbor_state] = sum_danger(self, neighbor_state)
                 heapq.heappush(open_list, neighbor_node)
 
     return [path_costs,sorted(danger_heur.items(), key=lambda x:x[1])]
@@ -221,11 +224,9 @@ def get_neighbors_func(state):
 def end_to_start(self, current_node):
     path = []
     while current_node:
-        if [current_node.state[0], current_node.state[1]] in self.visited:
-            path.append(current_node.state)
-            current_node = current_node.parent
-    return path  # 역순으로 반환하여 시작 위치부터 도착 위치까지의 경로를 얻습니다.
-
+        path.append(current_node.state)
+        current_node = current_node.parent
+    return path 
 
 
 # details for when do each action do
@@ -238,8 +239,7 @@ def reasoning(self):
     if percept.sense_glitter(self):
         self.world[before_x][before_y] = 0
         path = find_path(self, (before_x, before_y), sum_danger, get_neighbors_func, True)
-        
-        
+        print(path)
         return [grab(self), path]
     else:
         ag_pos = goForward(self)
@@ -286,14 +286,13 @@ def reasoning(self):
                 result = find_path(self, (before_x, before_y), sum_danger, get_neighbors_func, False)
                 path_costs = result[0]
                 danger_heur = result[1]
+                min_visit = [None, 5]
                 for pos, prob in danger_heur:
                     #print(f"위치: [{pos[0]}, {pos[1]}], 확률: {prob}, 거리: {path_costs[pos]}")
                     if path_costs[pos] != 1:
                         continue
                     elif (path_costs[pos] == 1 and prob < 100 
-                        and self.visited.count([pos[0], pos[1]]) < 2):
-                        
-                        #print(f"count: [{pos[0]}, {pos[1]}] = {self.visited.count([pos[0], pos[1]])}")
+                        and self.visited.count([pos[0], pos[1]]) < 1):
                         if [before_x+1, before_y] == [pos[0], pos[1]]:
                             self.agent['xy'] = [pos[0], pos[1]]
                             self.update_visited(pos[0], pos[1])
@@ -314,7 +313,38 @@ def reasoning(self):
                             self.update_visited(pos[0], pos[1])
                             self.agent['dir'] = "West"
                             return ["BestWay",dir, "West"]
-
+                        #print(f"count: [{pos[0]}, {pos[1]}] = {self.visited.count([pos[0], pos[1]])}")
+                        
+                    if (path_costs[pos] == 1 and prob < 100):
+                        
+                        temp = self.visited.count([pos[0], pos[1]])
+                        if min_visit[1] > temp:
+                            min_visit[1] = temp
+                            min_visit[0] = [pos[0], pos[1]]
+                        print(f"min: {min_visit}")
+                if min_visit[0] != None:
+                    print(min_visit[0])
+                    pos = min_visit[0]
+                    if [before_x+1, before_y] == [pos[0], pos[1]]:
+                        self.agent['xy'] = [pos[0], pos[1]]
+                        self.update_visited(pos[0], pos[1])
+                        self.agent['dir'] = "South"
+                        return ["BestWay", dir, "South"]
+                    elif [before_x, before_y+1] == [pos[0], pos[1]]:
+                        self.agent['xy'] = [pos[0], pos[1]]
+                        self.update_visited(pos[0], pos[1])
+                        self.agent['dir'] = "East"
+                        return ["BestWay", dir, "East"]
+                    elif [before_x-1, before_y] == [pos[0], pos[1]]:
+                        self.agent['xy'] = [pos[0], pos[1]]
+                        self.update_visited(pos[0], pos[1])
+                        self.agent['dir'] = "North"
+                        return ["BestWay", dir, "North"]
+                    elif [before_x, before_y-1] == [pos[0], pos[1]]:
+                        self.agent['xy'] = [pos[0], pos[1]]
+                        self.update_visited(pos[0], pos[1])
+                        self.agent['dir'] = "West"
+                        return ["BestWay",dir, "West"]
             # agent의 기본 행동
             self.agent['xy'] = [after_x, after_y]
             self.update_visited(after_x, after_y)

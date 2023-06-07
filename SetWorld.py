@@ -187,6 +187,10 @@ class init_world:
         self.find_wumpus(x-1,y+1)
         self.find_wumpus(x+1,y-1)
         self.find_wumpus(x+1,y+1)
+        self.find_wumpus(x,y-1)
+        self.find_wumpus(x,y+1)
+        self.find_wumpus(x+1,y)
+        self.find_wumpus(x-1,y)
         
         
         for i in range(len(self.wumpus_list)):

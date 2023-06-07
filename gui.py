@@ -3,7 +3,7 @@ import random
 from time import sleep
 from SetWorld import init_world
 from action import *
-random.seed(1031) # 1005, 1020, 1031
+random.seed(12) # 1005, 1020, 1031
 
 def load_img():
     #아이템 이미지 불러오기
@@ -15,12 +15,15 @@ def load_img():
     gold = pygame.transform.scale(gold,(100,100))
     #캐릭터 불러오기
     character = pygame.image.load('./wumpus-world/Wumpus World_images/Izreal.png')
-    character = pygame.transform.scale(character,(90,90))
+    character = pygame.transform.scale(character,(100,100))
     #배경 이미지 불러오기
     background = pygame.image.load('./wumpus-world/Wumpus World_images/grid.png')
     background = pygame.transform.scale(background,(500,500))
+    
+    arrow = pygame.image.load('./wumpus-world/Wumpus World_images/arrow.png')
+    arrow = pygame.transform.scale(arrow,(90,90))
 
-    return [wumpus, pitch, gold, character, background]
+    return [wumpus, pitch, gold, character, background,arrow]
 
 def draw_items(world):
     wumpus = load_img()[0]
@@ -38,7 +41,7 @@ def draw_items(world):
             elif i == 'G':
                 screen.blit(gold,(115 + (y-1)*125,70 + (x-1)*125))
 
-                            
+                 
 def rotate(character_info, dir, state, world):
     character = character_info[0]
     character_x_pos = character_info[1]
@@ -84,6 +87,7 @@ def move_pos(character_info, dir):
         character_y_pos += charcter_move
     
     return [character_x_pos, character_y_pos]
+
 
 def gui():
     world = init_world()
@@ -174,6 +178,10 @@ def gui():
                     character_x_pos = result[0]
                     character_y_pos = result[1]
                 elif runGame[0] == "Shoot":
+                    arrow = load_img()[5]        
+                    screen.blit(arrow,(10,10))
+                    pygame.display.update()
+                    sleep(0.5)
                     print("남은 화살: ")
                     print(runGame[1])
                 elif runGame[0] == "BestWay":
@@ -185,10 +193,12 @@ def gui():
                 elif runGame[0] == "Grab":
                     # 시작 지점으로 다시 돌아가는 gui
                     path = runGame[1]
+                    #print(path)
                     path.pop()
                     while path:
                         route = path.pop()
                         print("가보자고!")
+                        print(route)
                         if route[0] == world.agent['xy'][0]:
                             if route[1] == world.agent['xy'][1]+1:
                                 character = rotate(character_info, world.agent['dir'], "East",world)
@@ -199,7 +209,7 @@ def gui():
                         elif route[1] == world.agent['xy'][1]:
                             if route[0] == world.agent['xy'][0]+1:
                                 character = rotate(character_info, world.agent['dir'], "South", world)
-                               
+                            
                             elif route[0] == world.agent['xy'][0]-1:
                                 character = rotate(character_info, world.agent['dir'], "North", world)
                         character_info[1], character_info[2] = move_pos(character_info, world.agent['dir'])
@@ -226,7 +236,7 @@ def gui():
                             sleep(10)
                             running = False
 
-                        
+                            
                       
                 print("\n")    
 
