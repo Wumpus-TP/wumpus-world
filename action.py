@@ -192,10 +192,10 @@ def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
                     neighbor_h = ((current_node.state[0] - neighbor_state[0]) ** 2) + ((current_node.state[1] - neighbor_state[1]) ** 2)
                     neighbor_node = Grid(neighbor_state, parent=current_node, g=neighbor_g, h=neighbor_h, f=neighbor_g + neighbor_h)
                     
-                if neighbor_state not in path_costs or neighbor_g < path_costs[neighbor_state]:
-                    path_costs[neighbor_state] = neighbor_g
-                    danger_heur[neighbor_state] = sum_danger(self, neighbor_state)
-                    heapq.heappush(open_list, neighbor_node)
+                    if neighbor_state not in path_costs or neighbor_g < path_costs[neighbor_state]:
+                        path_costs[neighbor_state] = neighbor_g
+                        danger_heur[neighbor_state] = sum_danger(self, neighbor_state)
+                        heapq.heappush(open_list, neighbor_node)
             else:
                 neighbor_g = current_node.g + 1  # 비용은 항상 1로 가정
                 neighbor_h = ((current_node.state[0] - neighbor_state[0]) ** 2) + ((current_node.state[1] - neighbor_state[1]) ** 2)
