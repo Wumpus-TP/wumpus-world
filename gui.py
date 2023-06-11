@@ -3,27 +3,30 @@ import random
 from time import sleep
 from SetWorld import init_world
 from action import *
-random.seed(12) # 1005, 1020, 1031
+# random.seed(3) # 1005, 1020, 1031
 
 def load_img():
     #아이템 이미지 불러오기
-    wumpus = pygame.image.load('./wumpus-world/Wumpus World_images/wumpus.png')
+    wumpus = pygame.image.load('./Wumpus World_images/wumpus.png')
     wumpus = pygame.transform.scale(wumpus,(100,100))
-    pitch = pygame.image.load('./wumpus-world/Wumpus World_images/pitch.png')
+    pitch = pygame.image.load('./Wumpus World_images/pitch.png')
     pitch = pygame.transform.scale(pitch,(100,100))
-    gold = pygame.image.load('./wumpus-world/Wumpus World_images/gold.png')
+    gold = pygame.image.load('./Wumpus World_images/gold.png')
     gold = pygame.transform.scale(gold,(100,100))
     #캐릭터 불러오기
-    character = pygame.image.load('./wumpus-world/Wumpus World_images/Izreal.png')
+    character = pygame.image.load('./Wumpus World_images/Izreal.png')
     character = pygame.transform.scale(character,(100,100))
     #배경 이미지 불러오기
-    background = pygame.image.load('./wumpus-world/Wumpus World_images/grid.png')
+    background = pygame.image.load('./Wumpus World_images/grid.png')
     background = pygame.transform.scale(background,(500,500))
     
-    arrow = pygame.image.load('./wumpus-world/Wumpus World_images/arrow.png')
+    arrow = pygame.image.load('./Wumpus World_images/arrow.png')
     arrow = pygame.transform.scale(arrow,(90,90))
+    
+    noway = pygame.image.load('./Wumpus World_images/noway.png')
+    # noway = pygame.transform.scale(noway,(400,400))
 
-    return [wumpus, pitch, gold, character, background,arrow]
+    return [wumpus, pitch, gold, character, background,arrow,noway]
 
 def draw_items(world):
     wumpus = load_img()[0]
@@ -50,8 +53,10 @@ def rotate(character_info, dir, state, world):
     west_character = character_info[5]
 
     while dir != state:
+        print("rotate")
         if dir == "East":
             dir = "North"
+            
             character = pygame.transform.rotate(east_character, 90)
         elif dir == "West":
             dir = "South"
@@ -199,6 +204,7 @@ def gui():
                         route = path.pop()
                         print("가보자고!")
                         print(route)
+                        print(world.agent['dir'])
                         if route[0] == world.agent['xy'][0]:
                             if route[1] == world.agent['xy'][1]+1:
                                 character = rotate(character_info, world.agent['dir'], "East",world)
@@ -212,15 +218,19 @@ def gui():
                             
                             elif route[0] == world.agent['xy'][0]-1:
                                 character = rotate(character_info, world.agent['dir'], "North", world)
+                        
                         character_info[1], character_info[2] = move_pos(character_info, world.agent['dir'])
                         if world.agent['dir'] == "East":
                             character = east_character
                         elif world.agent['dir'] == "West":
                             character = west_character
+                        character_info[0] = character
+                        print(world.agent['dir'])
                         print(route)
                         world.agent['xy'] = route
                         screen.fill(color)
-                        screen.blit(character, (character_info[1], character_info[2])) #배경에 캐릭터 그려주기
+                        
+                        screen.blit(character_info[0], (character_info[1], character_info[2])) #배경에 캐릭터 그려주기
                         draw_items(world)
                         pygame.display.update()
                         sleep(0.5)
@@ -233,11 +243,19 @@ def gui():
                             screen.blit(character, (character_info[1], character_info[2])) #배경에 캐릭터 그려주기
                             draw_items(world)
                             pygame.display.update()
-                            sleep(10)
+                            sleep(4)
                             running = False
+                            # pygame.quit()
+                            break
+                elif runGame[0] == "No way":
+                    arrow = load_img()[6]        
+                    screen.blit(arrow,(100,100))
+                    pygame.display.update()
+                    sleep(0.5)
 
                             
-                      
+                if running == False:
+                    break
                 print("\n")    
 
                 #왼쪽, 오른쪽 경계 정하기
@@ -273,8 +291,11 @@ def gui():
     
 def main():
     gui()
-    
+c=0    
     
 if __name__ == "__main__":
-    main()
+    # main()
+    while c!=10:
+        c += 1
+        main()
         
