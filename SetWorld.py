@@ -8,6 +8,7 @@ class init_world:
     def __init__(self):
         grid_size = 6
         self.world = [[0] * grid_size for _ in range(grid_size)]
+        
         # danger prob - 계산 : [safe] = 0 추론 -> safe -> 0
         self.danger_prob = [[[1,1] for x in range(6)] for y in range(6)]   # 초기 세팅 = 1, 벽은 -1 [0] : wumpus, [1]: pitch
         
@@ -33,11 +34,11 @@ class init_world:
         
         # Set the wumpus and pit probability
         prob = 0.1
-        gold_x = random.randint(1,3)
-        gold_y = random.randint(2,4)
-        print(gold_x, gold_y)
-        self.state_grid[gold_x][gold_y]['glitter'] = True
-        self.world[gold_x][gold_y] = 'G'
+        self.gold_x = random.randint(1,3)
+        self.gold_y = random.randint(2,4)
+        print(self.gold_x, self.gold_y)
+        self.state_grid[self.gold_x][self.gold_y]['glitter'] = True
+        self.world[self.gold_x][self.gold_y] = 'G'
         
         # Generate wumpus and pit with probability 0.1 for each cell except (1,1)
         for i in range(1, 5):
@@ -60,11 +61,36 @@ class init_world:
                     self.state_grid[i-1][j]['breeze'] = True
                     self.state_grid[i][j-1]['breeze'] = True
                 
-                
-                        
+        #### pitch로 가로 막혀 있는 상황일 때 쓸 것 #### 
+        # self.world = [[1, 1, 1, 1, 1, 1],
+        # [1, 0, 0, 'P', 0, 1],
+        # [1, 0, 'P', 'G', 'P', 1],
+        # [1, 0, 0, 'P', 0, 1],
+        # [1, 0, 0, 0, 0, 1],
+        # [1, 1, 1, 1, 1, 1]]
+        # self.state_grid = [[{key: value for key, value in init_state.items()} for _ in range(6)] for _ in range(6)]
+        # for i in range(1, 5):
+        #     for j in range(1, 5):
+        #         self.state_grid[i][j]['bump'] = False # 벽이 아닌 부분 bump False로 바꿈
+        #         if self.world[i][j] == 'G':
+        #             self.state_grid[i][j]['glitter'] = True
+        #         elif self.world[i][j] == 'P':
+        #             self.state_grid[i][j]['breeze'] = True
+        #             self.state_grid[i+1][j]['breeze'] = True
+        #             self.state_grid[i][j+1]['breeze'] = True
+        #             self.state_grid[i-1][j]['breeze'] = True
+        #             self.state_grid[i][j-1]['breeze'] = True
+        #         elif self.world[i][j] == 'W':
+        #             self.state_grid[i][j]['stench'] = True
+        #             self.state_grid[i+1][j]['stench'] = True
+        #             self.state_grid[i][j+1]['stench'] = True
+        #             self.state_grid[i-1][j]['stench'] = True
+        #             self.state_grid[i][j-1]['stench'] = True
+        # 
+        ##---------------------------------------------------------##
+        
         for row in self.world:
             print(row)
-        
         
         # agent 위치정보 따로 저장 [4,1]
         self.agent = {'xy': [4, 1], 'dir': 'East', 'arrow': 2,'isgrab':False}
@@ -155,7 +181,7 @@ class init_world:
                 
             if self.danger_prob[nx][ny][0] != 0 and  self.danger_prob[nx][ny][0] != 100:  # wumpus가 없는게 확실하다면 0, wumpus가 있는게 확실하다면 100 
                 self.danger_prob[nx][ny][0] += 1
-            if self.danger_prob[nx][ny][1] != 0 and  self.danger_prob[nx][ny][1] != 100:  # wumpus가 없는게 확실하다면 0, wumpus가 있는게 확실하다면 100 
+            if self.danger_prob[nx][ny][1] != 0 and  self.danger_prob[nx][ny][1] != 100:  # pitch가 없는게 확실하다면 0, pitch가 있는게 확실하다면 100 
                 self.danger_prob[nx][ny][1] += 1
             
         
@@ -176,6 +202,7 @@ class init_world:
     
     # stench가 shoot 당한 wumpus가 아니라 다른 wumpus에 의해 생긴 경우 재로드                
     def update_state_grid(self,x, y):
+
         self.wumpus_list = list()
         if x-2 > -1 and x+2 < 6 and y-2 > -1 and y+2 <6:
             self.find_wumpus(x-2,y)
@@ -205,6 +232,7 @@ class init_world:
         if self.world[x][y] == "W":
             self.wumpus_list.append([x,y])
         else:
+            
             return 0
         
     def set_stench(self, i, j):
