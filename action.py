@@ -66,26 +66,29 @@ def shoot(self):
     x = self.agent['xy'][0]
     y = self.agent['xy'][1]
     dir = self.agent['dir']
-
     
     self.agent['arrow']-=1
+    
     # search wumpus in row that agent exists. If it exists, shoot 
-    if dir == "East": 
-        for n in range(y, 5):
-            self.danger_prob[x][n][0] = 0
-            if(self.world[x][n] == "W"):
-                self.danger_prob[x][n][1] = 0
+    if dir == "East":
+        y += 1
+        self.danger_prob[x][y][0] = 0
+        for n in range(self.agent['xy'][1], 5):
+            
+            if self.world[x][n] == "W":
+                
+                # self.danger_prob[x][n][1] = 0
                 self.world[x][n] = 0
                 self.state_grid[x][n]['stench'] = False
                 self.state_grid[x+1][n]['stench'] = False
                 self.state_grid[x][n+1]['stench'] = False
                 self.state_grid[x-1][n]['stench'] = False
                 self.state_grid[x][n-1]['stench'] = False
-
+                
                 self.update_state_grid(x, n)
                 return "Scream"
     elif dir == "West":
-        for n in range(y, 1, -1):
+        for n in range(y, 0, -1):
             self.danger_prob[x][n][0] = 0
             if(self.world[x][n] == "W"):
                 self.danger_prob[x][n][1] = 0
@@ -99,7 +102,7 @@ def shoot(self):
                 self.update_state_grid(x, n)
                 return "Scream"
     elif dir == "North":
-        for m in range(x, 1, -1):
+        for m in range(x, 0, -1):
             self.danger_prob[m][y][0] = 0
             if(self.world[m][y] == "W"):
                 self.danger_prob[m][y][1] = 0
@@ -111,12 +114,15 @@ def shoot(self):
                 self.state_grid[m][y-1]['stench'] = False
 
                 self.update_state_grid(m, y)
-                return "Scream"    
+                return "Scream"       
     elif dir == "South":
-        for m in range(x, 5):
-            self.danger_prob[m][y][0] = 0
-            if(self.world[m][y] == "W"):
-                self.danger_prob[m][y][1] = 0
+        x += 1
+        self.danger_prob[x][y][0] = 0
+        for m in range(self.agent['xy'][0], 5):
+            
+            if self.world[m][y] == "W":
+                # self.danger_prob[m][y][0] = 0
+                # self.danger_prob[m][y][1] = 0
                 self.world[m][y] = 0
                 self.state_grid[m][y]['stench'] = False
                 self.state_grid[m+1][y]['stench'] = False
@@ -156,14 +162,15 @@ class Grid:
         return self.state == other.state
 
 # 원하는 위치의 격자에 접근하기 위한 함수
-def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
+def find_path(self, start, flag, isgrab):
     goal = (4, 1) # 다시 돌아가야 할 노드
     
     open_list = []
     closed_list = set()
     path_costs = {}  # 각 노드까지의 최적 비용을 저장하기 위한 딕셔너리
     danger_heur = {} # 각 노드의 위험확률을 저장하기 위한 딕셔너리
-
+    obstacle = set() # 금을 획득할 수 있는지 확인 용, pitch의 위치를 기록
+    
     # 시작 노드 초기화
     start_node = Grid(start, g=0, h=0)
     heapq.heappush(open_list, start_node)
@@ -171,12 +178,16 @@ def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
 
     while open_list:
         current_node = heapq.heappop(open_list)
-
+        # print(current_node.state)
         # 금을 획득하면,
         # 다시 원래 자리로 돌아가야하므로 시작 지점까지 가는 루트 탐색
         if isgrab == True and current_node.state == goal:
             return end_to_start(self, current_node)
 
+        # 금을 획득할 수 있는 루트 존재 여부 확인
+        if flag == True and current_node.state == goal:
+            return True
+        
         if current_node.state in closed_list:
             continue
 
@@ -186,6 +197,11 @@ def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
         neighbors = get_neighbors_func(current_node.state)
         
         for neighbor_state in neighbors:
+            if flag == True:
+                if self.danger_prob[neighbor_state[0]][neighbor_state[1]] == [0,100]:
+                    obstacle.add(neighbor_state)
+                    continue
+
             if isgrab == True:
                 if [neighbor_state[0], neighbor_state[1]] in self.visited:
                     neighbor_g = current_node.g + 1  # 비용은 항상 1로 가정
@@ -205,7 +221,8 @@ def find_path(self, start, sum_danger, get_neighbors_func, isgrab):
                     path_costs[neighbor_state] = neighbor_g
                     danger_heur[neighbor_state] = sum_danger(self, neighbor_state)
                     heapq.heappush(open_list, neighbor_node)
-
+    if  flag == True:
+        return False
     return [path_costs,sorted(danger_heur.items(), key=lambda x:x[1])]
 
 # 휴리스틱 함수 = wumpus가 있을 확률+ pitch가 있을 확률
@@ -238,14 +255,14 @@ def end_to_start(self, current_node):
 
 # details for when do each action do
 def reasoning(self):
-
+    self.update_danger_prob(self.agent['xy'][0],self.agent['xy'][1])
     dir = self.agent['dir']
     before_x = self.agent['xy'][0]
     before_y = self.agent['xy'][1]
-    
+   
     if percept.sense_glitter(self):
         self.world[before_x][before_y] = 0
-        path = find_path(self, (before_x, before_y), sum_danger, get_neighbors_func, True)
+        path = find_path(self, (before_x, before_y),False, True)
         print(path)
         return [grab(self), path]
     else:
@@ -260,7 +277,7 @@ def reasoning(self):
         
         # agent가 벽에 부딪혔을 때의 이동
         if percept.sense_bump(self, after_x, after_y):
-            print(self.agent['dir'])
+            # print(self.agent['dir'])
             if dir == "East":
                 if ([after_x-1, after_y] in self.visited
                     and percept.sense_bump(self, after_x-1, after_y)):
@@ -280,17 +297,56 @@ def reasoning(self):
             return ["Bump", turnLeft(self)]
         
         elif percept.sense_bump(self, after_x, after_y) == False: # if the node, agent want to go, is wall, don't move
-            print(self.agent['arrow'])
+            print("남은 화살: ",self.agent['arrow'])
+            isCheck = []
+            matching_indices = [[row_idx, col_idx] for row_idx, row in enumerate(self.danger_prob) for col_idx, element in enumerate(row) if element != [0, 100]
+                                and [row_idx,col_idx] not in self.visited and row_idx > 0 and row_idx < 5 and col_idx > 0 and col_idx < 5]
+            print("L",matching_indices)
+            if len(matching_indices)!= 0:
+                for i in matching_indices:
+                    isCheck.append(find_path(self, (i[0],i[1]), True, False))
+                           
+                print(isCheck)
+                if any(isCheck) == False:
+                    print("False")
+                    return(["No way"])
+            if self.danger_prob[after_x][after_y][1] == 100:
+                return ["Danger", turnLeft(self)]
             # agent가 위험을 감지했을 때의 행동
             if [after_x, after_y] not in self.visited:
                 if self.danger_prob[after_x][after_y][0] > 1 and self.agent['arrow'] > 0:
+                    # shoot(self)
                     return ["Shoot", percept.sense_scream(self)]
-                elif self.danger_prob[after_x][after_y][1] > 1:
+                elif self.danger_prob[after_x][after_y][1] == 100:
+                    return ["Danger", turnLeft(self)] 
+                elif self.danger_prob[after_x][after_y][1] > 1 and self.danger_prob[after_x][after_y][1] < 5:
                     return ["Danger", turnLeft(self)]
                 
+            
             # agent가 이동할 최적의 이동 경로
             elif [after_x, after_y] in self.visited:
-                result = find_path(self, (before_x, before_y), sum_danger, get_neighbors_func, False)
+
+                    
+                neighbors = get_neighbors_func((before_x, before_y))
+                for neighbor in neighbors:
+                    if neighbor not in self.visited and self.danger_prob[neighbor[0]][neighbor[1]] == [100,0]:
+                        print(neighbor)
+                        if neighbor[0] == before_x:
+                            if neighbor[1] == before_y + 1:
+                                g_dir = 'East'
+                            elif neighbor[1] == before_y - 1:
+                                g_dir = 'West'
+                        elif neighbor[1] == before_y:
+                            if neighbor[0] == before_x + 1:
+                                g_dir = 'South'
+                            elif neighbor[0] == before_x - 1:
+                                g_dir = 'North'
+                        if self.agent['dir'] != g_dir:
+                            return ["Danger", turnLeft(self)]
+                        return ["Shoot", percept.sense_scream(self)]
+                        
+                    
+                result = find_path(self, (before_x, before_y),False, False)
                 path_costs = result[0]
                 danger_heur = result[1]
                 min_visit = [None, 5]
@@ -372,4 +428,4 @@ def reasoning(self):
 
 # main(self.init_world())
 
-    
+
