@@ -343,7 +343,10 @@ def reasoning(self):
                                 g_dir = 'North'
                         if self.agent['dir'] != g_dir:
                             return ["Danger", turnLeft(self)]
-                        return ["Shoot", percept.sense_scream(self)]
+                        if self.agent['arrow'] > 0:
+                            return ["Shoot", percept.sense_scream(self)]
+                        else:
+                            return ["GoForward", dir, percept.sense_breeze(self), percept.sense_stench(self)]
                         
                     
                 result = find_path(self, (before_x, before_y),False, False)
