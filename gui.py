@@ -2,8 +2,8 @@ import pygame
 import random
 from time import sleep
 from SetWorld import init_world
-from action import *
-# random.seed(3) # 1005, 1020, 1031
+from action2 import *
+random.seed(2323) # 1005, 1020, 1031
 
 def load_img():
     #아이템 이미지 불러오기
@@ -26,7 +26,9 @@ def load_img():
     noway = pygame.image.load('./Wumpus World_images/noway.png')
     # noway = pygame.transform.scale(noway,(400,400))
 
-    return [wumpus, pitch, gold, character, background,arrow,noway]
+    finish = pygame.image.load('./Wumpus World_images/finish.png')
+    finish = pygame.transform.scale(finish,(90,90))
+    return [wumpus, pitch, gold, character, background,arrow,noway, finish]
 
 def draw_items(world):
     wumpus = load_img()[0]
@@ -242,6 +244,8 @@ def gui():
                             screen.fill((255, 255, 255))
                             screen.blit(character, (character_info[1], character_info[2])) #배경에 캐릭터 그려주기
                             draw_items(world)
+                            finish = load_img()[7]
+                            screen.blit(finish, (10,10))
                             pygame.display.update()
                             sleep(4)
                             running = False
@@ -294,8 +298,8 @@ def main():
 c=0    
     
 if __name__ == "__main__":
-    # main()
-    while c!=10:
-        c += 1
-        main()
+    main()
+    # while c!=10:
+    #     c += 1
+    #     main()
         

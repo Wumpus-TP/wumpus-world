@@ -1,7 +1,7 @@
 import sys
 import percept
 import random
-random.seed(42)
+#random.seed(42)
 
 class init_world:
     
@@ -40,6 +40,7 @@ class init_world:
         self.state_grid[self.gold_x][self.gold_y]['glitter'] = True
         self.world[self.gold_x][self.gold_y] = 'G'
         
+        
         # Generate wumpus and pit with probability 0.1 for each cell except (1,1)
         for i in range(1, 5):
             for j in range(1, 5):
@@ -65,9 +66,17 @@ class init_world:
         # self.world = [[1, 1, 1, 1, 1, 1],
         # [1, 0, 0, 'P', 0, 1],
         # [1, 0, 'P', 'G', 'P', 1],
-        # [1, 0, 0, 'P', 0, 1],
+        # [1, 0, 'P', 'P', 0, 1],
         # [1, 0, 0, 0, 0, 1],
         # [1, 1, 1, 1, 1, 1]]
+        # self.world = [[1, 1, 1, 1, 1, 1],
+        # [1, 0, 'P', 0, 'G', 1],
+        # [1, 'P', 'P', 0, 0, 1],
+        # [1, 'P', 0, 'P', 0, 1],
+        # [1, 0, 0, 0, 0, 1],
+        # [1, 1, 1, 1, 1, 1]]
+        # self.gold_x = 1
+        # self.gold_y = 4
         # self.state_grid = [[{key: value for key, value in init_state.items()} for _ in range(6)] for _ in range(6)]
         # for i in range(1, 5):
         #     for j in range(1, 5):
@@ -86,7 +95,7 @@ class init_world:
         #             self.state_grid[i][j+1]['stench'] = True
         #             self.state_grid[i-1][j]['stench'] = True
         #             self.state_grid[i][j-1]['stench'] = True
-        # 
+        
         ##---------------------------------------------------------##
         
         for row in self.world:
