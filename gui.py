@@ -2,8 +2,8 @@ import pygame
 import random
 from time import sleep
 from SetWorld import init_world
-from action2 import *
-random.seed(2323) # 1005, 1020, 1031
+from action import *
+#random.seed(2323) # 1005, 1020, 1031
 
 def load_img():
     #아이템 이미지 불러오기
